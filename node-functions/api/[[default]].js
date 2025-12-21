@@ -98,8 +98,8 @@ const FUNCTION_METRICS = [
 
 app.get('/config', (req, res) => {
     res.json({
-        siteName: process.env.SITE_NAME || 'AcoFork 的 EdgeOne 监控大屏',
-        siteIcon: process.env.SITE_ICON || 'https://q2.qlogo.cn/headimg_dl?dst_uin=2726730791&spec=0'
+        siteName: process.env.SITE_NAME || 'EdgeOne 监控大屏',
+        siteIcon: process.env.SITE_ICON || 'https://cdn.cydiaa.com/favicon.ico'
     });
 });
 
