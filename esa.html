@@ -42,8 +42,6 @@
                 },
             },
         }
-
-        fetchConfig(); // 页面加载时立即执行获取配置
     </script>
 
     <style>
@@ -84,7 +82,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 id="page-header" class="text-3xl font-bold tracking-tight text-slate-900">阿里云ESA 监控大屏</h1>
-                <p class="text-muted-foreground mt-1">阿里云ESAESA 站点流量与请求量分析</p>
+                <p class="text-muted-foreground mt-1">阿里云ESA 站点流量与请求量分析</p>
             </div>
         </div>
 
@@ -129,7 +127,7 @@
             <div class="flex items-center space-x-2">
                 <label for="interval" class="text-sm font-medium">粒度:</label>
                 <select id="interval" onchange="refreshData()" class="h-9 w-[180px] rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900">
-                    <option value="60" selected>自动</option> <!-- 默认为 1 分钟，后续可根据需求做更智能的自动选择 -->
+                    <option value="60" selected>自动</option>
                     <option value="60">1 分钟</option>
                     <option value="300">5 分钟</option>
                     <option value="3600">1 小时</option>
@@ -139,21 +137,20 @@
             <div class="flex items-center space-x-2">
                 <label for="zoneId" class="text-sm font-medium">选择站点:</label>
                 <select id="zoneId" onchange="refreshData()" class="h-9 w-[240px] rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900">
-                     <option value="">全部站点</option> <!-- 初始占位符 -->
+                     <option value="">全部站点</option>
                 </select>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="space-y-8">
-
             <!-- Section 1: Traffic (流量) -->
             <div class="space-y-4">
                 <h2 class="text-xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                     流量分析 (Traffic)
                 </h2>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4"> <!-- 调整为4列布局 -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <!-- 总流量 (Traffic) Card -->
                     <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
                         <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
@@ -195,70 +192,59 @@
                         </div>
                     </div>
                 </div>
-				
             </div>
-
-        </div> <!-- End of space-y-8 (Main Content) -->
-
-    </div> <!-- End of max-w-7xl mx-auto space-y-8 -->
+        </div>
+    </div>
 
     <script>
         // --- 全局变量和配置 ---
         const metricsConfig = {
-            bytesMetrics: ['Traffic', 'RequestTraffic'], // 需要字节格式化的指标
-            countMetrics: ['PageView', 'Requests'],      // 需要计数格式化的指标
-            dieldname: ['Traffic', 'Requests', 'RequestTraffic', 'PageView'], // 
+            bytesMetrics: ['Traffic', 'RequestTraffic'],
+            countMetrics: ['PageView', 'Requests'],
+            fieldNames: ['Traffic', 'Requests', 'RequestTraffic', 'PageView'],
             dimension: ['ALL']
         };
 
-        let activeFetches = 0; // 跟踪当前活跃的fetch请求数量
+        let currentRequests = []; // 跟踪当前请求
+        let requestCount = 0;    // 已完成的请求数
+        let totalRequests = 0;   // 总请求数
+        let refreshDebounceTimer = null; // 防抖定时器
 
         // --- 辅助函数：加载进度条 ---
-        function showProgressBar() {
+        function initProgressBar() {
             const progressBar = document.getElementById('loading-progress-bar');
-            if (progressBar && activeFetches === 0) { // 只有在没有其他活跃请求时才重置
-                progressBar.style.width = '0%';
-                progressBar.classList.remove('opacity-0');
-            }
-            if (progressBar) {
-                activeFetches++;
-                // 简单模拟进度增长，更复杂的需要根据实际请求数量来计算
-                const currentWidth = parseFloat(progressBar.style.width || '0');
-                const newWidth = Math.min(95, currentWidth + (100 - currentWidth) / (activeFetches + 2)); // 避免直接到100%
-                progressBar.style.width = `${newWidth}%`;
-            }
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('opacity-0');
+            requestCount = 0;
         }
 
-        function hideProgressBar() {
+        function updateProgressBar() {
             const progressBar = document.getElementById('loading-progress-bar');
-            if (progressBar) {
-                activeFetches = Math.max(0, activeFetches - 1);
-                if (activeFetches === 0) {
+            requestCount++;
+            const progress = (requestCount / totalRequests) * 100;
+            progressBar.style.width = `${Math.min(progress, 95)}%`;
+            
+            // 所有请求完成
+            if (requestCount >= totalRequests) {
+                setTimeout(() => {
                     progressBar.style.width = '100%';
                     setTimeout(() => {
-                        progressBar.classList.add('opacity-0'); // 结束后淡出
-                        progressBar.style.width = '0%'; // 重置宽度便于下次使用
-                    }, 300); // 等待过渡完成
-                } else {
-                    // 如果还有其他请求，调整进度条宽度
-                    const currentWidth = parseFloat(progressBar.style.width || '0');
-                    const newWidth = Math.min(95, currentWidth + (100 - currentWidth) / (activeFetches + 2)); 
-                    progressBar.style.width = `${newWidth}%`;
-                }
+                        progressBar.classList.add('opacity-0');
+                        progressBar.style.width = '0%';
+                    }, 300);
+                }, 200);
             }
         }
 
         // --- 日期和时间处理函数 ---
-        // 将 Date 对象格式化为 ISO 8601 字符串 (UTC)，例如 "2023-10-27T10:00:00Z"
         function formatDate(date) {
             return date.toISOString().slice(0, 19) + 'Z';
         }
 
-        // 根据选择的时间范围计算开始时间和结束时间
         function calculateTimeRange() {
             const range = document.getElementById('timeRange').value;
             const now = new Date();
-            let endTime = new Date(now); // 默认结束时间为当前时间
+            let endTime = new Date(now);
             let startTime;
         
             switch(range) {
@@ -267,16 +253,16 @@
                 case '6h': startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000); break;
                 case 'today': 
                     startTime = new Date(now);
-                    startTime.setHours(0, 0, 0, 0); // 今天 0点0分0秒0毫秒
+                    startTime.setHours(0, 0, 0, 0);
                     break;
                 case 'yesterday':
                     startTime = new Date(now);
                     startTime.setDate(now.getDate() - 1);
-                    startTime.setHours(0, 0, 0, 0); // 昨天 0点0分0秒0毫秒
+                    startTime.setHours(0, 0, 0, 0);
                     
                     endTime = new Date(now);
                     endTime.setDate(now.getDate() - 1);
-                    endTime.setHours(23, 59, 59, 999); // 昨天 23点59分59秒999毫秒
+                    endTime.setHours(23, 59, 59, 999);
                     break;
                 case '3d': startTime = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000); break;
                 case '7d': startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break;
@@ -289,7 +275,7 @@
                     const seconds = parseInt(document.getElementById('customSeconds').value) || 0;
                     
                     let totalMs = ((days * 24 * 60 * 60) + (hours * 60 * 60) + (minutes * 60) + seconds) * 1000;
-                    const maxMs = 31 * 24 * 60 * 60 * 1000; // 31 days limit
+                    const maxMs = 31 * 24 * 60 * 60 * 1000;
                     const errorEl = document.getElementById('timeRangeError');
         
                     if (totalMs > maxMs) {
@@ -302,11 +288,11 @@
                     if (totalMs > 0) {
                         startTime = new Date(now.getTime() - totalMs);
                     } else {
-                        startTime = new Date(now.getTime() - 60 * 60 * 1000); // 默认为 1 小时
+                        startTime = new Date(now.getTime() - 60 * 60 * 1000);
                     }
                     break;
                 default: 
-                    startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 默认近 24 小时
+                    startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                     break;
             }
         
@@ -317,16 +303,13 @@
         }
 
         // --- 数据格式化函数 ---
-
-        // 字节流量格式化 (使用 1000 进制，GB)
         function formatBytes(bytes) {
             if (typeof bytes !== 'number' || isNaN(bytes)) return 'N/A';
             if (bytes === 0) return '0 B';
             
-            const k = 1000; // GB 采用 1000 进制
+            const k = 1000;
             const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']; 
             
-            // 处理负数情况
             const absoluteBytes = Math.abs(bytes);
             const sign = bytes < 0 ? '-' : '';
 
@@ -336,7 +319,6 @@
             return sign + parseFloat((absoluteBytes / Math.pow(k, clampedIndex)).toFixed(2)) + ' ' + sizes[clampedIndex];
         }
 
-        // 获取最佳计数单位 (次, 千次, 万次, 亿次)
         function getBestCountUnit(maxValue) {
             if (typeof maxValue !== 'number' || isNaN(maxValue)) return { unit: 'N/A', divisor: 1 };
             
@@ -346,139 +328,156 @@
             return { unit: '亿次', divisor: 100000000 };
         }
 
-        // 通用计数指标格式化
         function formatCount(value) {
             if (typeof value !== 'number' || isNaN(value)) return 'N/A';
             
             const { unit, divisor } = getBestCountUnit(value);
             if (divisor === 1) {
-                return value.toLocaleString() + ' ' + unit; // "次" 不需要小数位
+                return value.toLocaleString() + ' ' + unit;
             }
-            // 对于千次、万次、亿次，保留两位小数
             return (value / divisor).toFixed(2).toLocaleString() + ' ' + unit;
         }
 		
         // --- 交互及数据获取逻辑 ---
-
-        /**
-         * 辅助函数：显示/隐藏自定义时间输入框
-         */
         function toggleCustomTimeInputs() {
             const timeRangeSelect = document.getElementById('timeRange');
             const customInputsDiv = document.getElementById('customTimeInputs');
             if (timeRangeSelect.value === 'custom') {
                 customInputsDiv.classList.remove('hidden');
-                customInputsDiv.classList.add('flex'); // 显示为flex布局
+                customInputsDiv.classList.add('flex');
             } else {
                 customInputsDiv.classList.add('hidden');
                 customInputsDiv.classList.remove('flex');
-                document.getElementById('timeRangeError').innerText = ''; // 清除错误信息
+                document.getElementById('timeRangeError').innerText = '';
             }
         }
 
-        /**
-         * 处理时间范围选择变化，并刷新数据
-         */
         function handleTimeRangeChange() {
-            toggleCustomTimeInputs(); // 根据选择显示/隐藏自定义输入
-            refreshData(); // 刷新数据
+            toggleCustomTimeInputs();
+            // 防抖处理，避免快速切换时频繁请求
+            clearTimeout(refreshDebounceTimer);
+            refreshDebounceTimer = setTimeout(refreshData, 300);
         }
 
         /**
-         * 异步获取指定指标的数据并更新对应的DOM元素
-         * @param {string} metricName - 指标的名称，同时也是DOM元素的ID
-         * @param {string} dimension - 维度的字符串 (例如 'ALL', 'zone-id-xxxxx')
-         * @param {string} startTime - ISO 8601 格式的开始时间
-         * @param {string} endTime - ISO 8601 格式的结束时间
+         * 异步获取单个指标数据
+         * @param {string} metricName 指标名称
+         * @param {string} dimension 维度
+         * @param {string} startTime 开始时间
+         * @param {string} endTime 结束时间
+         * @returns {Promise} 包含指标值的Promise
          */
-        async function fetchAndDisplayMetric(metricName, dimension, startTime, endTime) {
-            const targetElement = document.getElementById(metricName);
-            if (!targetElement) {
-                console.warn(`Element with ID "${metricName}" not found. Skipping fetch.`);
-                return;
-            }
-
-            targetElement.textContent = "加载中..."; // 在请求前显示加载状态
-            showProgressBar(); // 显示进度条
-
-            const interval = document.getElementById('interval').value; // 获取粒度
-
-            // 构建 API URL
+        async function fetchMetric(metricName, dimension, startTime, endTime) {
+            const interval = document.getElementById('interval').value;
             const apiUrl = `/esa/traffic?name=${encodeURIComponent(metricName)}&dimension=${encodeURIComponent(dimension)}&interval=${encodeURIComponent(interval)}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
 
             try {
                 const response = await fetch(apiUrl);
-
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} for metric: ${metricName}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
-
-                let displayValue = "无数据"; // 默认显示值
                 let rawValue = null;
                 let foundData = false;
 
                 if (data && Array.isArray(data.Data) && data.Data.length > 0) {
-			// 2. 查找匹配 FieldName 的指标项
-			const metricEntry = data.Data.find(item => item.FieldName === metricName);
-
-			// 3. 检查指标项及 DetailData 数组是否有效
-				if (metricEntry && Array.isArray(metricEntry.DetailData) && metricEntry.DetailData.length > 0) {
-				rawValue = metricEntry.DetailData[0].Value; // 获取数组第一个元素的 Value
-			foundData = true;
-			displayValue = rawValue.toString(); // 有数据时更新显示值
-			}
-			}
-                
-                // 根据原始数值和配置进行格式化
-                if (foundData && rawValue !== null) {
-                    if (metricsConfig.bytesMetrics.includes(metricName)) {
-                        displayValue = formatBytes(rawValue);
-                    } else if (metricsConfig.countMetrics.includes(metricName)) {
-                        displayValue = formatCount(rawValue);
-                    } else {
-                        displayValue = rawValue.toLocaleString(); // 其他数字使用本地化格式
+                    const metricEntry = data.Data.find(item => item.FieldName === metricName);
+                    if (metricEntry && Array.isArray(metricEntry.DetailData) && metricEntry.DetailData.length > 0) {
+                        rawValue = metricEntry.DetailData[0].Value;
+                        foundData = true;
                     }
-                } else {
-                    displayValue = "无数据";
-                    console.warn(`No valid data found in API response for metric: ${metricName}:`, data);
                 }
 
-                targetElement.textContent = displayValue;
-
+                return {
+                    metricName,
+                    success: foundData,
+                    value: rawValue
+                };
             } catch (error) {
-                console.error(`Failed to fetch data for ${metricName}:`, error);
-                targetElement.textContent = "加载失败"; // 显示错误信息
+                console.error(`获取${metricName}数据失败:`, error);
+                return {
+                    metricName,
+                    success: false,
+                    value: null
+                };
             } finally {
-                hideProgressBar(); // 隐藏进度条
+                updateProgressBar(); // 更新进度条
             }
         }
 
         /**
-         * 刷新所有指标数据的主函数
+         * 更新DOM元素显示指标数据
+         * @param {Object} result 指标请求结果
          */
-        async function refreshData() {
-            const { startTime, endTime } = calculateTimeRange(); // 在这里计算一次时间范围
-           
-            const encodedDimension = metricsConfig.dimension;
+        function updateMetricDisplay(result) {
+            const targetElement = document.getElementById(result.metricName);
+            if (!targetElement) return;
 
-            const allMetricsToFetch = metricsConfig.dieldname; // 所有需要加载的指标
-
-            // 遍历所有指标，并传递计算好的 startTime 和 endTime
-            for (const metricName of allMetricsToFetch) {
-                // await 使请求按顺序执行，如果希望并行，可以收集 Promise.all()
-                await fetchAndDisplayMetric(metricName, encodedDimension, startTime, endTime);
+            if (!result.success || result.value === null) {
+                targetElement.textContent = "无数据";
+                return;
             }
-            // 如果有图表，可以在这里调用图表刷新函数
-            // refreshCharts(startTime, endTime, encodedDimension);
+
+            let displayValue;
+            if (metricsConfig.bytesMetrics.includes(result.metricName)) {
+                displayValue = formatBytes(result.value);
+            } else if (metricsConfig.countMetrics.includes(result.metricName)) {
+                displayValue = formatCount(result.value);
+            } else {
+                displayValue = result.value.toLocaleString();
+            }
+
+            targetElement.textContent = displayValue;
         }
 
+        /**
+         * 批量刷新所有指标数据
+         */
+        async function refreshData() {
+            // 取消之前的请求
+            currentRequests.forEach(abort => abort());
+            currentRequests = [];
+
+            // 初始化所有指标为加载中
+            metricsConfig.fieldNames.forEach(metricName => {
+                const el = document.getElementById(metricName);
+                if (el) el.textContent = "加载中...";
+            });
+
+            const { startTime, endTime } = calculateTimeRange();
+            const encodedDimension = metricsConfig.dimension;
+            const allMetrics = metricsConfig.fieldNames;
+            
+            // 初始化进度条
+            totalRequests = allMetrics.length;
+            initProgressBar();
+
+            // 创建所有请求的Promise
+            const requestPromises = allMetrics.map(metricName => {
+                // 创建AbortController用于取消请求
+                const controller = new AbortController();
+                const signal = controller.signal;
+                currentRequests.push(() => controller.abort());
+
+                // 包装fetchMetric，添加abort信号
+                return fetchMetric(metricName, encodedDimension, startTime, endTime, signal);
+            });
+
+            // 并行执行所有请求
+            const results = await Promise.all(requestPromises);
+            
+            // 更新所有DOM显示
+            results.forEach(result => updateMetricDisplay(result));
+            
+            // 清空请求跟踪
+            currentRequests = [];
+        }
 
         // --- DOM加载完成后执行初始化逻辑 ---
         document.addEventListener('DOMContentLoaded', async () => {
-            toggleCustomTimeInputs(); // 2. 初始化自定义时间输入框的显示状态
-            refreshData(); // 3. 然后刷新所有数据
+            toggleCustomTimeInputs();
+            refreshData();
         });
     </script>
 </body>
