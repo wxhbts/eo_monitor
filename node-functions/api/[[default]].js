@@ -98,7 +98,7 @@ const FUNCTION_METRICS = [
 
 app.get('/config', (req, res) => {
     res.json({
-        siteName: process.env.SITE_NAME || 'EdgeOne 监控大屏',
+        siteName: process.env.SITE_NAME || '腾讯云EdgeOne 监控大屏',
         siteIcon: process.env.SITE_ICON || 'https://cdn.cydiaa.com/favicon.ico'
     });
 });
