@@ -294,7 +294,7 @@ app.get('/traffic', async (req, res) => {
 		
         const finalQueryParams = new URLSearchParams(coreParams).toString();
 
-        const aliyunApiEndpoint = 'https://esa.cn-hangzhou.aliyuncs.com';
+        const aliyunApiEndpoint = 'https://esa.ap-southeast-1.aliyuncs.com';
 		
         const apiUrl = `${aliyunApiEndpoint}/?${finalQueryParams}`; 
         
