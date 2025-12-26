@@ -104,10 +104,147 @@ app.get('/traffic', async (req, res) => {
         };
 
         const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24小时前
-        const metric = req.query.dimension || "ALL";
-		const name = req.query.name || "Traffic";
+		if (req.query.metric == 'l7Flow_flux'){
+			var action = 'DescribeSiteTimeSeriesData';
+			var name = 'Traffic';
+			var metric = 'ALL';
+		}
+		if (req.query.metric == 'l7Flow_inFlux'){
+			var action = 'DescribeSiteTimeSeriesData';
+			var name = 'RequestTraffic';
+			var metric = 'ALL';
+		}
+		if (req.query.metric == 'l7Flow_outFlux'){
+			var action = 'DescribeSiteTimeSeriesData';
+			var name = 'Traffic';
+			var metric = 'ALL';
+		}
+		if (req.query.metric == 'l7Flow_request'){
+			var action = 'DescribeSiteTimeSeriesData';
+			var name = 'Requests';
+			var metric = 'ALL';
+		}
+		if (req.query.metric == 'l7Flow_request_country'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientCountryCode';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_country'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientCountryCode';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_province'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientProvinceCode';
+		}
+		if (req.query.metric == 'l7Flow_request_province'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientProvinceCode';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_statusCode'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'EdgeResponseStatusCode';
+		}
+		if (req.query.metric == 'l7Flow_request_statusCode'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'EdgeResponseStatusCode';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_domain'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientRequestHost';
+		}
+		if (req.query.metric == 'l7Flow_request_domain'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientRequestHost';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_url'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientRequestPath';
+		}
+		if (req.query.metric == 'l7Flow_request_url'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientRequestPath';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_resourceType'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'EdgeResponseContentType';
+		}
+		if (req.query.metric == 'l7Flow_request_resourceType'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'EdgeResponseContentType';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_sip'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientIP';
+		}
+		if (req.query.metric == 'l7Flow_request_sip'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientIP';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_referers'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientRequestReferer';
+		}
+		if (req.query.metric == 'l7Flow_request_referers'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientRequestReferer';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_ua_os'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientOS';
+		}
+		if (req.query.metric == 'l7Flow_request_ua_os'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientOS';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_ua'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientRequestUserAgent';
+		}
+		if (req.query.metric == 'l7Flow_request_ua'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientRequestUserAgent';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_ua_device'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'ClientRequestMethod';
+		}
+		if (req.query.metric == 'l7Flow_request_ua_device'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'ClientRequestMethod';
+		}
+		if (req.query.metric == 'l7Flow_outFlux_ua_browser'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Traffic';
+			var metric = 'EdgeCacheStatus';
+		}
+		if (req.query.metric == 'l7Flow_request_ua_browser'){
+			var action = 'DescribeSiteTopData';
+			var name = 'Requests';
+			var metric = 'EdgeCacheStatus';
+		}
 		const Limit = req.query.Limit || "5";
-		const action = req.query.action || "DescribeSiteTopData";
         const startTime = req.query.startTime || formatDate(yesterday);
         const endTime = req.query.endTime || formatDate(now);
         const interval = req.query.interval || "60";
@@ -128,7 +265,7 @@ app.get('/traffic', async (req, res) => {
             SignatureMethod: 'HMAC-SHA1',
             SignatureNonce: signatureNonce, // 动态生成
             SignatureVersion: '1.0',
-            SiteId: siteIdFromQuery || '', // 从查询参数获取或为空字符串
+            SiteId: siteIdFromQuery || '1036556791122480', // 从查询参数获取或为空字符串
             StartTime: startTime,
             Timestamp: timestamp, // 动态生成且格式化
             Version: '2024-09-10'
@@ -146,20 +283,18 @@ app.get('/traffic', async (req, res) => {
             canonicalizedQueryString += `&${percentEncode(key)}=${percentEncode(value)}`;
         });
         canonicalizedQueryString = canonicalizedQueryString.substring(1);
-        const httpMethod = 'GET'; // Your Express route is app.get
-        // For Aliyun signing, the path is often just `/`
+        const httpMethod = 'GET'; 
+
         const aliyunSigningPath = '/'; 
         const stringToSign = `${httpMethod}&${percentEncode(aliyunSigningPath)}&${percentEncode(canonicalizedQueryString)}`;
-        //console.log('StringToSign:', stringToSign);
+
         const signature = await calculateHmacSha1Base64(secretKey, stringToSign);
-        
-        //console.log('Signature:', signature);
+
         coreParams.Signature = signature;
-        //console.log('Final Request Params:', coreParams);
 		
         const finalQueryParams = new URLSearchParams(coreParams).toString();
 
-        const aliyunApiEndpoint = 'https://esa.ap-southeast-1.aliyuncs.com';
+        const aliyunApiEndpoint = 'https://esa.cn-hangzhou.aliyuncs.com';
 		
         const apiUrl = `${aliyunApiEndpoint}/?${finalQueryParams}`; 
         
@@ -179,6 +314,63 @@ app.get('/traffic', async (req, res) => {
             });
         }
         const apiData = await apiResponse.json();
+		
+    if (
+  // 修复逻辑运算符优先级：给||条件加括号
+  (req.query.metric === 'l7Flow_flux' || req.query.metric === 'l7Flow_inFlux' || req.query.metric === 'l7Flow_outFlux' || req.query.metric === 'l7Flow_request') 
+  && apiData.Data 
+  && apiData.Data.length > 0
+) {
+  // 1. 安全获取SummarizedData中的Value值（容错处理）
+  const trafficValue = apiData.SummarizedData?.[0]?.Value || 0;
+
+  // 2. 处理DetailData：转换TimeStamp为秒级时间戳 + 修正字段名
+  const detailList = (apiData.Data[0].DetailData || []).map(item => ({
+    Value: item.Value || 0,
+    // 核心：ISO时间字符串 → 秒级时间戳（取整避免小数）
+    Timestamp: item.TimeStamp 
+      ? Math.floor(new Date(item.TimeStamp).getTime() / 1000) 
+      : 0 
+  }));
+
+  // 3. 构建最终的TypeValue结构（包含Detail子数组）
+  apiData.Data[0].TypeValue = [
+    {
+      MetricName: req.query.metric,
+      Sum: trafficValue,
+      Detail: detailList // 替换为转换后的Detail列表
+    }
+  ];
+	delete apiData.Data[0].DetailData;
+ 
+  delete apiData.SummarizedData;
+}
+
+if (
+  req.query.metric === 'l7Flow_request_country' || req.query.metric === 'l7Flow_outFlux_country' || req.query.metric === 'l7Flow_outFlux_province' ||req.query.metric === 'l7Flow_request_province' || req.query.metric === 'l7Flow_outFlux_statusCode' || req.query.metric === 'l7Flow_request_statusCode' ||req.query.metric === 'l7Flow_outFlux_domain' || req.query.metric === 'l7Flow_request_domain'||req.query.metric === 'l7Flow_outFlux_url' || req.query.metric === 'l7Flow_request_url'||req.query.metric === 'l7Flow_outFlux_resourceType' || req.query.metric === 'l7Flow_request_resourceType'||req.query.metric === 'l7Flow_outFlux_sip' || req.query.metric === 'l7Flow_request_sip'||req.query.metric === 'l7Flow_outFlux_referers' || req.query.metric === 'l7Flow_request_referers'||req.query.metric === 'l7Flow_outFlux_ua_os' || req.query.metric === 'l7Flow_request_ua_os'||req.query.metric === 'l7Flow_outFlux_ua' || req.query.metric === 'l7Flow_request_ua'||req.query.metric === 'l7Flow_outFlux_ua_device' || req.query.metric === 'l7Flow_request_ua_device'||req.query.metric === 'l7Flow_outFlux_ua_browser' || req.query.metric === 'l7Flow_request_ua_browser'
+  && apiData.Data 
+  && apiData.Data.length > 0
+) {
+  // 遍历Data数组，处理每个元素的DetailData
+  apiData.Data.forEach(dataItem => {
+    // 检查DetailData是否存在且为数组
+    if (dataItem.DetailData && Array.isArray(dataItem.DetailData)) {
+      // 遍历DetailData，替换DimensionValue为Key
+      dataItem.DetailData = dataItem.DetailData.map(detailItem => {
+        // 构建新对象：保留所有字段，替换DimensionValue为Key
+        const newDetailItem = { ...detailItem };
+        // 如果存在DimensionValue字段
+        if (newDetailItem.DimensionValue !== undefined) {
+          // 新增Key字段，赋值为原DimensionValue的值
+          newDetailItem.Key = newDetailItem.DimensionValue;
+          // 删除原DimensionValue字段
+          delete newDetailItem.DimensionValue;
+        }
+        return newDetailItem;
+      });
+    }
+  });
+}
         return res.json(apiData);
         
     } catch (error) {
