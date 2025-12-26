@@ -4,7 +4,7 @@
     <link rel="icon" href="https://cdn.cydiaa.com/favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EdgeOne 监控大屏</title>
+    <title>腾讯云EdgeOne 监控大屏</title>
     <!-- Tailwind CSS for Shadcn/UI style -->
     <script src="https://edgeone.cydiaa.com/?url=https://cdn.tailwindcss.com"></script>
     <script src="https://edgeone.cydiaa.com/?url=https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
@@ -116,8 +116,8 @@
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h1 id="page-header" class="text-3xl font-bold tracking-tight text-slate-900">EdgeOne 监控大屏</h1>
-                <p class="text-muted-foreground mt-1">EdgeOne 站点流量与请求量分析</p>
+                <h1 id="page-header" class="text-3xl font-bold tracking-tight text-slate-900">腾讯云EdgeOne 监控大屏</h1>
+                <p class="text-muted-foreground mt-1">腾讯云EdgeOne 站点流量与请求量分析</p>
             </div>
         </div>
 
@@ -169,12 +169,14 @@
                     <option value="day">1 天</option>
                 </select>
             </div>
-            <div class="flex items-center space-x-2">
-                <label for="zoneId" class="text-sm font-medium">选择站点:</label>
-                <select id="zoneId" onchange="refreshData()" class="h-9 w-[240px] rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900">
-                     <option value="*">加载中...</option>
-                </select>
-            </div>
+           <div class="flex items-center space-x-2">
+    <label for="cdnSelector" class="text-sm font-medium">CDN服务商:</label>
+    <select id="cdnSelector" onchange="if(this.value) window.location.href=this.value" class="h-9 w-[240px] rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-900">
+        <!-- 假设 EO 对应的页面是 eo.html，ESA 对应的页面是 esa.html -->
+        <option value="" selected >腾讯云 EO 监控</option>
+        <option value="esa.html" >阿里云 ESA 监控</option>
+		</select>
+		</div>
             <!-- <button onclick="refreshData()" class="h-9 px-4 py-2 bg-slate-900 text-white hover:bg-slate-900/90 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 shadow">
                 刷新
             </button> -->
@@ -1191,7 +1193,7 @@
                 }
 
                 const interval = document.getElementById('interval').value;
-                const zoneId = document.getElementById('zoneId').value.trim();
+                const zoneId = '*';
                 
                 let url = `/api/traffic?metric=${metric}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
                 if (interval && interval !== 'auto') {
@@ -1359,7 +1361,7 @@
                 
                 const select = document.getElementById('zoneId');
                 // Keep the current selection if possible, or default to *
-                const currentVal = select.value;
+                const currentVal = '*';
                 select.innerHTML = ''; 
 
                 // Always add "All Zones" option
@@ -1389,12 +1391,12 @@
                 }
 
             } catch (err) {
-                console.error("Error fetching zones:", err);
-                const select = document.getElementById('zoneId');
+                //console.error("Error fetching zones:", err);
+                //const select = document.getElementById('zoneId');
                 // If error, ensure we have at least the default * option
-                if (select.options.length === 0 || select.options[0].value !== '*') {
-                     select.innerHTML = '<option value="*">获取站点失败 (默认为全部)</option>';
-                }
+                //if (select.options.length === 0 || select.options[0].value !== '*') {
+                  //   select.innerHTML = '<option value="*">获取站点失败 (默认为全部)</option>';
+               // }
             }
         }
 
